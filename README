@@ -1,0 +1,8 @@
+
+to exit press (control-z) when in file
+
+flex: flex -L -oName <fileName>
+bison: bison -d <fileName>
+compile both files
+
+NOTE. must end every statement with a ';' or the parser wont konw that branch to take.
