@@ -23,7 +23,6 @@ float powFun(float base, int exp)
 	{
 		result = result * base;
 	}
-	printf("RESULT IS : %f\n", result);
 	return result;
 }
 
@@ -100,6 +99,7 @@ float toFloat(int input)
 %token <sval> FREG
 %token <ival> NUMBER
 %token <fval> FNUM
+%token <sval> NEWLINE
 %type <ival> iexpression
 %type <ival> iterm
 %type <ival> ifactor
@@ -108,20 +108,20 @@ float toFloat(int input)
 %type <fval> ffactor
 %type <fval> statement
 %type <fval> power
+%type <ival> ivalue
+%type <fval> fvalue
 %%
 
 program:
 	  '{' statements '}' {printf("REDUCE: <program> -> { <statements> } \n"); exit(0); }
-	| singleStatement '\n'{printf("REDUCE: <program> -> <signleStatement> \n"); }
-	| statements 		 {printf("REDUCE: <program> -> <statements> \n");      } 
-	;
-
-singleStatement:
-	  statement 		{printf("REDUCE: <singleStatement> -> <statement> \n"); }
+	| '{' NEWLINE statements '}' {printf("REDUCE: <program> -> { <statements> } \n"); exit(0); }
+	| statement NEWLINE 		 {printf("REDUCE: <program> -> <statement> NEWLINE \n"); exit(0);} 
 	;
 
 statements:
 	  statement ';' statements 	{printf("REDUCE: <statements> -> <statement> ; <statements> \n"); }
+	| statement ';' NEWLINE statements 	{printf("REDUCE: <statements> -> <statement> ; <statements> \n"); }
+	| statement ';' NEWLINE		{printf("REDUCE: <statements> -> <statement> ; <statements> \n"); }
 	| statement ';'				{printf("REDUCE: <statements> -> <statement> ; \n"); }
 	;
 
@@ -147,12 +147,12 @@ iexpression:
 	;
 
 fexpression:
-      fexpression '+' fterm { $$ = $1 + $3; printf("REDUCE: <fexpression> -> <fexpression> + <fterm> (%f) \n", $$); }
-    | fexpression '+' iterm { $$ = $1 + $3; printf("REDUCE: <fexpression> -> <fexpression> + <iterm> (%f) \n", $$); }
-    | iexpression '+' fterm { $$ = $1 + $3; printf("REDUCE: <fexpression> -> <iexpression> + <fterm> (%f) \n", $$); }
-	| fexpression '-' fterm { $$ = $1 - $3; printf("REDUCE: <fexpression> -> <fexpression> - <fterm> (%f) \n", $$); }
-	| fexpression '-' iterm { $$ = $1 - $3; printf("REDUCE: <fexpression> -> <fexpression> - <iterm> (%f) \n", $$); }
-	| iexpression '-' fterm { $$ = $1 - $3; printf("REDUCE: <fexpression> -> <iexpression> - <fterm> (%f) \n", $$); }
+      fexpression '+' fterm { $$ = $1 + $3; printf("REDUCE: <fexpression> -> <fexpression> + <fterm> (%g) \n", $$); }
+    | fexpression '+' iterm { $$ = $1 + $3; printf("REDUCE: <fexpression> -> <fexpression> + <iterm> (%g) \n", $$); }
+    | iexpression '+' fterm { $$ = $1 + $3; printf("REDUCE: <fexpression> -> <iexpression> + <fterm> (%g) \n", $$); }
+	| fexpression '-' fterm { $$ = $1 - $3; printf("REDUCE: <fexpression> -> <fexpression> - <fterm> (%g) \n", $$); }
+	| fexpression '-' iterm { $$ = $1 - $3; printf("REDUCE: <fexpression> -> <fexpression> - <iterm> (%g) \n", $$); }
+	| iexpression '-' fterm { $$ = $1 - $3; printf("REDUCE: <fexpression> -> <iexpression> - <fterm> (%g) \n", $$); }
 	| fterm                 { $$ = $1;      printf("REDUCE: <fexpression> -> <fterm> (%f) \n", $$);}
 	;
 
@@ -172,22 +172,34 @@ fterm:
 	| power           { $$ = $1;      printf("REDUCE: <fterm> -> <power> (%f) \n", $$); }
 	;
 
+
+
 power:
-	  ffactor '^' ffactor {$$ = powFun($1, toInt($3)); 			printf("<power> -> <ffactor> ^ <ffactor> (%f)\n", $$);}
+	  ffactor '^' power {$$ = powFun($1, toInt($3)); 			printf("<power> -> <ffactor> ^ <ffactor> (%f)\n", $$);}
 	| ffactor '^' ifactor {$$ = powFun($1,$3);					printf("<power> -> <ffactor> ^ <ifactor> (%f)\n", $$);}
-	| ifactor '^' ffactor {$$ = powFun(toFloat($1), toInt($3)); printf("<power> -> <ifactor> ^ <ffactor> (%f)\n", $$);}
+	| ifactor '^' power {$$ = powFun(toFloat($1), toInt($3)); printf("<power> -> <ifactor> ^ <ffactor> (%f)\n", $$);}
 	| ifactor '^' ifactor {$$ = powFun(toFloat($1), $3); 		printf("<power> -> <ifactor> ^ <ifactor> (%f)\n", $$);}
-	| ffactor
+	| ffactor {$$ = $1;}
 	;
 
 ifactor: 
-      NUMBER 				{$$ = $1; 			printf("REDUCE: <ifactor> -> <NUMBER> (%i) \n", $$); }
+	  ivalue { $$ = $1;}
+	| '+' ivalue {$$ = $2;}
+	| '-' ivalue {$$ = -$2;}
+
+
+ffactor:
+	  fvalue {$$ = $1;}
+	| '+' fvalue {$$ = $2;}
+	| '-' fvalue {$$ = -$2;}
+
+ivalue:
+	  NUMBER 				{$$ = $1; 			printf("REDUCE: <ifactor> -> <NUMBER> (%i) \n", $$); }
     | IREG 					{$$ = getInt($1);	printf("REDUCE: <ifactor> -> <IREG> (%i) \n", $$); }
 	| '(' iexpression ')' 	{$$ = $2; 			printf("REDUCE: <ifactor> -> ( <iexpression> ) (%i) \n", $$); }
 	;
 
-
-ffactor: 
+fvalue:
       FNUM 					{$$ = $1; 			printf("REDUCE: <ffactor> -> <FNUM> (%f) \n", $$); }
     | FREG  				{$$ = getFloat($1); printf("REDUCE: <ffactor> -> <FREG> (%f) \n", $$); }
 	| '(' fexpression ')' 	{$$ = $2; 			printf("REDUCE: <ffactor> -> ( <fexpression> ) (%f)\n", $$); }

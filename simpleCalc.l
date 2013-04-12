@@ -24,6 +24,7 @@ FLOATREG [Rr][_a-zA-Z]*[5-9]
 {FLOAT} 					{yylval.fval = atof(yytext); 		printf("TOKEN: FLOAT:(%f)\n", yylval.fval); 	return FNUM;	}
 {INTREG} 					{yylval.sval = formatReg(yytext);	printf("TOKEN: INTREG:(%s) \n", yylval.sval); 	return IREG;	}
 {FLOATREG} 					{yylval.sval = formatReg(yytext); 	printf("TOKEN: FLOATREG:(%s) \n", yylval.sval);	return FREG;	}
+"\n"						{yylval.sval = yytext; 				printf("TOKEN: NEWLINE\n"); return NEWLINE;}
 [a-zA-z]+ 					{yylval.sval = yytext; return NAME;}
 [ \t]	;		/* ignore white space */
 <<EOF>>	return 0;	/* logical EOF */
